@@ -7,7 +7,7 @@
  */
 
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View,TouchableOpacity,Image} from 'react-native';
+import {Platform, StyleSheet, Text, View, TouchableOpacity, Image} from 'react-native';
 
 import Video from 'react-native-video';
 
@@ -28,15 +28,126 @@ export default class App extends Component<Props> {
 
         this.state = {
             video: null,
-            videoPause: true
+            videoPause: true,
+            status:0
         }
+    }
+
+    //选择图片
+    selectPhotoTapped() {
+        const options = {
+            title: '选择图片',
+            cancelButtonTitle: '取消',
+            takePhotoButtonTitle: '拍照',
+            chooseFromLibraryButtonTitle: '选择照片',
+            customButtons: [
+                {name: 'fb', title: 'Choose Photo from Facebook'},
+            ],
+            cameraType: 'back',
+            mediaType: 'photo',
+            videoQuality: 'high',
+            durationLimit: 10,
+            maxWidth: 300,
+            maxHeight: 300,
+            quality: 0.8,
+            angle: 0,
+            allowsEditing: false,
+            noData: false,
+            storageOptions: {
+                skipBackup: true
+            }
+        };
+
+        ImagePicker.showImagePicker(options, (response) => {
+            console.log('Response = ', response);
+
+            if (response.didCancel) {
+                console.log('User cancelled photo picker');
+            }
+            else if (response.error) {
+                console.log('ImagePicker Error: ', response.error);
+            }
+            else if (response.customButton) {
+                console.log('User tapped custom button: ', response.customButton);
+            }
+            else {
+                let source = {uri: response.uri};
+
+                // You can also display the image using data:
+                // let source = { uri: 'data:image/jpeg;base64,' + response.data };
+
+                this.setState({
+                    avatarSource: source
+                });
+            }
+        });
+    }
+
+    //选择视频
+    selectVideoTapped() {
+        const options = {
+
+            title: '选择视频',
+            cancelButtonTitle: '取消',
+            takePhotoButtonTitle: '录制视频',
+            chooseFromLibraryButtonTitle: '选择视频',
+            mediaType: 'video',
+            videoQuality: 'medium',
+            durationLimit: 15,
+            allowsEditing: true
+        };
+
+        ImagePicker.showImagePicker(options, (response) => {
+            console.log('Response = ', response);
+
+            if (response.didCancel) {
+                console.log('User cancelled video picker');
+            }
+            else if (response.error) {
+                console.log('ImagePicker Error: ', response.error);
+            }
+            else if (response.customButton) {
+                console.log('User tapped custom button: ', response.customButton);
+            }
+            else {
+                this.setState({
+                    video: response.uri,
+                    status:1
+                });
+            }
+        });
     }
 
 
     render() {
+
+        let uri = this.state.video ? this.state.video : 'http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4'
+
+
         return (
             <View style={styles.container}>
-                <Text style={styles.welcome}>Welcome to React Native!</Text>
+
+                <TouchableOpacity onPress={this.selectPhotoTapped.bind(this)}>
+                    <View style={[styles.avatar, styles.avatarContainer, {marginBottom: 30}]}>
+                        {this.state.avatarSource === null ? <Text>选择照片</Text> :
+                            <Image style={styles.avatar} source={this.state.avatarSource}/>
+                        }
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={this.selectVideoTapped.bind(this)}>
+                    <View style={[styles.avatar, styles.avatarContainer]}>
+                        <Text>选择视频</Text>
+                    </View>
+                </TouchableOpacity>
+
+                {this.state.videoSource &&
+                <Text style={{margin: 8, textAlign: 'center'}}>{this.state.videoSource}</Text>
+                }
+
+                <Text style={styles.welcome} onPress={() => {
+
+                }}>Welcome to React Native!</Text>
                 <Text style={styles.instructions}>To get started, edit App.js</Text>
                 <Text style={styles.instructions} onPress={() => {
 
@@ -45,16 +156,17 @@ export default class App extends Component<Props> {
                 {this.state.video ?
                     <TouchableOpacity
                         onPress={() => {
-                            this.setState({
-                                videoPause: !this.state.videoPause
-                            })
+                            // this.setState({
+                            //     videoPause: !this.state.videoPause
+                            // })
+                            this.video.presentFullscreenPlayer()
                         }}
                         activeOpacity={1}
                         style={{position: 'relative'}}
                     >
                         <Video
                             ref={c => this.video = c}
-                            source={{uri: this.state.video.uri}} // Looks for .mp4 file (background.mp4) in the given expansion version.
+                            source={{uri: uri}} // Looks for .mp4 file (background.mp4) in the given expansion version.
                             rate={1}                   // 0 is paused, 1 is normal.
                             volume={1.0}                 // 0 is muted, 1 is normal.
                             muted={true}                // Mutes the audio entirely.
@@ -67,9 +179,11 @@ export default class App extends Component<Props> {
                             onLoad={this.onLoad}
                             onProgress={this.onProgress}
                             onPlaybackRateChange={this.onPlaybackRateChange}
+
                         />
-                        {this.state.videoPause ? <Image source={{uri:'http://img.25pp.com/uploadfile/soft/images/2015/0314/20150314120547391.jpg'}}
-                                                        style={{position: 'absolute', width: 50, height: 50, top: 125, left: 125}}/> : null}
+                        {this.state.videoPause ? <Image
+                            source={{uri: 'http://img.25pp.com/uploadfile/soft/images/2015/0314/20150314120547391.jpg'}}
+                            style={{position: 'absolute', width: 50, height: 50, top: 125, left: 125}}/> : null}
                     </TouchableOpacity>
                     :
                     <TouchableOpacity
@@ -83,7 +197,7 @@ export default class App extends Component<Props> {
                     >
                         <Video
                             ref={c => this.video = c}
-                            source={{uri: 'http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4'}} // Looks for .mp4 file (background.mp4) in the given expansion version.
+                            source={{uri: uri}} // Looks for .mp4 file (background.mp4) in the given expansion version.
                             rate={1}                   // 0 is paused, 1 is normal.
                             volume={1.0}                 // 0 is muted, 1 is normal.
                             muted={false}                // Mutes the audio entirely.
@@ -97,8 +211,9 @@ export default class App extends Component<Props> {
                             onProgress={this.onProgress}
                             onPlaybackRateChange={this.onPlaybackRateChange}
                         />
-                        {this.state.videoPause ? <Image source={{uri:'http://img.25pp.com/uploadfile/soft/images/2015/0314/20150314120547391.jpg'}}
-                                                        style={{position: 'absolute', width: 50, height: 50, top: 125, left: 125}}/> : null}
+                        {this.state.videoPause ? <Image
+                            source={{uri: 'http://img.25pp.com/uploadfile/soft/images/2015/0314/20150314120547391.jpg'}}
+                            style={{position: 'absolute', width: 50, height: 50, top: 125, left: 125}}/> : null}
                     </TouchableOpacity>
                 }
             </View>
@@ -180,4 +295,15 @@ const styles = StyleSheet.create({
         color: '#333333',
         marginBottom: 5,
     },
+    avatarContainer: {
+        borderColor: '#9B9B9B',
+        borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    avatar: {
+        borderRadius: 50,
+        width: 100,
+        height: 100
+    }
 });
